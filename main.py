@@ -4,7 +4,7 @@ from typing import List, Optional, Union
 
 from fastapi import FastAPI, APIRouter
 from pydantic import BaseModel, EmailStr
-from sqlalchemy import Column, UUID, String, Boolean, Integer, UniqueConstraint
+from sqlalchemy import Column, UUID, String, Boolean, Integer, UniqueConstraint, ForeignKey
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, declarative_base, mapped_column, Mapped, relationship
 
@@ -13,7 +13,7 @@ import config
 engine = create_async_engine(config.DATABASE_URL, future=True, echo=True)
 
 
-async_session = sessionmaker(engine=engine, expire_on_commit=False, class_=AsyncSession)
+async_session = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 
 
 Base = declarative_base()
@@ -49,8 +49,11 @@ class Pallet(Base):
     title: Mapped[str] = mapped_column(nullable=False)
     description: Mapped[str] = mapped_column(nullable=False)
     location: Mapped[Optional["Location"]] = relationship(back_populates="pallet")
-    supplier: Mapped["Supplier"] = relationship(back_populates='pallet')
+    location_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("location.id"))
+    supplier: Mapped["Supplier"] = relationship(back_populates='pallets')
+    supplier_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("supplier.id"))
     user: Mapped["User"] = relationship(back_populates="pallets")
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("user.id"))
 
 
 class Supplier(Base):
@@ -58,7 +61,7 @@ class Supplier(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(nullable=False)
-    pallets: Mapped[List["Pallet"]] = relationship(back_populates="pallets")
+    pallets: Mapped[List["Pallet"]] = relationship(back_populates="supplier")
 
 
 class AbstractAsyncRepo(ABC):
@@ -108,11 +111,18 @@ class SupplierRepo(AbstractAsyncRepo):
 
 
 class UserModel(BaseModel):
-    id: uuid.UUID | None
+    id: uuid.UUID
     name: str
     surname: str
     email: EmailStr
-    pallets: List["PalletModel"]
+    # pallets: List["PalletModel"]
+
+
+class CreateUser(BaseModel):
+    name: str
+    surname: str
+    email: EmailStr
+    # pallets: List["PalletModel"]
 
 
 class PalletModel(BaseModel):
@@ -139,7 +149,7 @@ class SupplierModel(BaseModel):
 
 class UserServie:
 
-    async def create(self, data: UserModel):
+    async def create(self, data: CreateUser):
         async with async_session() as session:
             async with session.begin():
                 user_repo = UserRepo(session)
@@ -153,7 +163,7 @@ user_router = APIRouter()
 
 
 @user_router.post("/", response_model=UserModel)
-async def create_user(user: UserModel):
+async def create_user(user: CreateUser):
     user_service = UserServie()
     return await user_service.create(user)
 
