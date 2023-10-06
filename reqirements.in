@@ -2,4 +2,5 @@ fastapi[all]
 alembic
 sqlalchemy
 psycopg2-binary
+asyncpg
 environ

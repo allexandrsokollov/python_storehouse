@@ -14,6 +14,8 @@ anyio==3.7.1
     #   httpcore
     #   starlette
     #   watchfiles
+asyncpg==0.28.0
+    # via -r reqirements.ini
 certifi==2023.7.22
     # via
     #   httpcore

@@ -12,3 +12,8 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - storehouse_data:/var/lib/postgresql/data
+
+volumes:
+  storehouse_data:
