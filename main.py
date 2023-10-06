@@ -49,11 +49,11 @@ class Pallet(Base):
     title: Mapped[str] = mapped_column(nullable=False)
     description: Mapped[str] = mapped_column(nullable=False)
     location: Mapped[Optional["Location"]] = relationship(back_populates="pallet")
-    location_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("location.id"))
+    location_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("location.id"))
     supplier: Mapped["Supplier"] = relationship(back_populates='pallets')
     supplier_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("supplier.id"))
     user: Mapped["User"] = relationship(back_populates="pallets")
-    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("user.id"))
+    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("user.id"))
 
 
 class Supplier(Base):
@@ -94,8 +94,9 @@ class LocationRepo(AbstractAsyncRepo):
 
 class PalletRepo(AbstractAsyncRepo):
 
-    async def create(self, title: str, description: str, location: Location | None, supplier: Supplier) -> Pallet:
-        new_pallet = Pallet(title=title, description=description, location=location, supplier=supplier)
+    async def create(self, title: str, description: str,
+                     location_id: uuid.UUID | None, supplier_id: uuid.UUID | None) -> Pallet:
+        new_pallet = Pallet(title=title, description=description, location_id=location_id, supplier_id=supplier_id)
         self.db_session.add(new_pallet)
         await self.db_session.flush()
         return new_pallet
@@ -126,11 +127,20 @@ class CreateUser(BaseModel):
 
 
 class PalletModel(BaseModel):
-    id: uuid.UUID | None
+    id: uuid.UUID
     title: str
     description: str
     location: Union["LocationModel", None]
+    supplier_id: uuid.UUID
     user: UserModel | None
+
+
+class CreatePalletModel(BaseModel):
+    title: str
+    description: str
+    supplier_id: uuid.UUID
+    location_id: uuid.UUID | None
+    user_id: uuid.UUID | None
 
 
 class LocationModel(BaseModel):
@@ -144,7 +154,11 @@ class LocationModel(BaseModel):
 class SupplierModel(BaseModel):
     id: uuid.UUID | None
     name: str
-    pallets: List[PalletModel]
+    pallets: List[PalletModel] | None
+
+
+class CreateSupplierModel(BaseModel):
+    name: str
 
 
 class UserServie:
@@ -157,15 +171,51 @@ class UserServie:
                 return UserModel(id=user.id, name=user.name, surname=user.surname, email=user.email)
 
 
+class SupplierService:
+
+    async def create(self, data: CreateSupplierModel):
+        async with async_session() as session:
+            async with session.begin():
+                supplier_repo = SupplierRepo(session)
+                supplier = await supplier_repo.create(name=data.name)
+                return SupplierModel(id=supplier.id, name=supplier.name, pallets=None)
+
+
+class PalletService:
+    async def create(self, pallet: CreatePalletModel) -> PalletModel:
+        async with async_session() as session:
+            async with session.begin():
+                pallet_repo = PalletRepo(session)
+                new_pallet = await pallet_repo.create(title=pallet.title, description=pallet.description,
+                                                      location_id=None, supplier_id=pallet.supplier_id)
+                return PalletModel(id=new_pallet.id, title=new_pallet.title, description=new_pallet.description,
+                                   supplier_id=new_pallet.supplier_id, location=None,
+                                   user=None)
+
+
 app = FastAPI(title="storehouse")
 
 user_router = APIRouter()
+supplier_router = APIRouter()
+pallet_router = APIRouter()
 
 
 @user_router.post("/", response_model=UserModel)
 async def create_user(user: CreateUser):
     user_service = UserServie()
     return await user_service.create(user)
+
+
+@supplier_router.post("/", response_model=SupplierModel)
+async def create_supplier(supplier: CreateSupplierModel):
+    supplier_service = SupplierService()
+    return await supplier_service.create(supplier)
+
+
+@pallet_router.post("/", response_model=PalletModel)
+async def create_pallet(pallet: CreatePalletModel):
+    pallet_service = PalletService()
+    return await pallet_service.create(pallet)
 
 
 @app.get("/")
@@ -175,6 +225,8 @@ async def root():
 
 main_api_router = APIRouter()
 main_api_router.include_router(user_router, prefix="/users", tags=["user"])
+main_api_router.include_router(supplier_router, prefix="/suppliers", tags=["supplier"])
+main_api_router.include_router(pallet_router, prefix="/pallet", tags=["pallet"])
 
 app.include_router(main_api_router)
 
