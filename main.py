@@ -7,6 +7,7 @@ from pydantic import BaseModel, EmailStr
 from sqlalchemy import Column, UUID, String, Boolean, Integer, UniqueConstraint, ForeignKey
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, declarative_base, mapped_column, Mapped, relationship
+from sqlalchemy.future import select
 
 import config
 
@@ -102,15 +103,6 @@ class PalletRepo(AbstractAsyncRepo):
         return new_pallet
 
 
-class SupplierRepo(AbstractAsyncRepo):
-
-    async def create(self, name: str) -> Supplier:
-        new_supplier = Supplier(name=name)
-        self.db_session.add(new_supplier)
-        await self.db_session.flush()
-        return new_supplier
-
-
 class UserModel(BaseModel):
     id: uuid.UUID
     name: str
@@ -161,6 +153,19 @@ class CreateSupplierModel(BaseModel):
     name: str
 
 
+class SupplierRepo(AbstractAsyncRepo):
+
+    async def create(self, name: str) -> Supplier:
+        new_supplier = Supplier(name=name)
+        self.db_session.add(new_supplier)
+        await self.db_session.flush()
+        return new_supplier
+
+    async def retrieve(self, supplier_uuid: uuid.UUID) -> SupplierModel:
+        supplier = await self.db_session.get(Supplier, supplier_uuid)
+        return SupplierModel(id=supplier.id, name=supplier.name, pallets=None)
+
+
 class UserServie:
 
     async def create(self, data: CreateUser):
@@ -180,6 +185,13 @@ class SupplierService:
                 supplier = await supplier_repo.create(name=data.name)
                 return SupplierModel(id=supplier.id, name=supplier.name, pallets=None)
 
+    async def get(self, supplier_uuid: uuid.UUID):
+        async with async_session() as session:
+            async with session.begin():
+                supplier_repo = SupplierRepo(session)
+                supplier = await supplier_repo.retrieve(supplier_uuid)
+                return SupplierModel(id=supplier.id, name=supplier.name, pallets=None)
+
 
 class PalletService:
     async def create(self, pallet: CreatePalletModel) -> PalletModel:
@@ -191,6 +203,24 @@ class PalletService:
                 return PalletModel(id=new_pallet.id, title=new_pallet.title, description=new_pallet.description,
                                    supplier_id=new_pallet.supplier_id, location=None,
                                    user=None)
+
+
+async def fill_up():
+    supplier_service = SupplierService()
+    supplier_one = await supplier_service.create(CreateSupplierModel(name="sup__1"))
+    supplier_two = await supplier_service.create(CreateSupplierModel(name="sup__2"))
+
+    pallet_service = PalletService()
+
+    for i in range(1200):
+        if i % 2 == 0:
+            await pallet_service.create(CreatePalletModel(title=f"pallet_{i}", description=f"description_{i}",
+                                                          supplier_id=supplier_one.id, location_id=None,
+                                                          user_id=None))
+        else:
+            await pallet_service.create(CreatePalletModel(title=f"pallet_{i}", description=f"description_{i}",
+                                                          supplier_id=supplier_two.id, location_id=None,
+                                                          user_id=None))
 
 
 app = FastAPI(title="storehouse")
@@ -212,6 +242,12 @@ async def create_supplier(supplier: CreateSupplierModel):
     return await supplier_service.create(supplier)
 
 
+@supplier_router.get("/{supplier_id}", response_model=SupplierModel)
+async def create_supplier(supplier_id: uuid.UUID):
+    supplier_service = SupplierService()
+    return await supplier_service.get(supplier_id)
+
+
 @pallet_router.post("/", response_model=PalletModel)
 async def create_pallet(pallet: CreatePalletModel):
     pallet_service = PalletService()
@@ -221,6 +257,12 @@ async def create_pallet(pallet: CreatePalletModel):
 @app.get("/")
 async def root():
     return {"data": 'Main page'}
+
+
+@app.get("/fill_up_db")
+async def root():
+    await fill_up()
+    return {"data": 'filling up completed successfully'}
 
 
 main_api_router = APIRouter()
