@@ -4,11 +4,10 @@ services:
 
   fastapi:
     build: .
-    command: bash -c "pip install -r req.txt  && uvicorn main:app --port 8000"
     volumes:
       - .:/application
     ports:
-      - "8000:8000"
+      - "80:80"
     env_file:
       - ./.env
     depends_on:
