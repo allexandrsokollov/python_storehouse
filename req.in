@@ -1,5 +1,7 @@
 fastapi
 pydantic[email]
+alembic
+pip-tools
 sqlalchemy
 asyncpg
 uvicorn
