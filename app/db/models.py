@@ -40,12 +40,13 @@ class Pallet(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key=True, default=uuid.uuid4)
     title: Mapped[str] = mapped_column(nullable=False)
     description: Mapped[str] = mapped_column(nullable=False)
-    location: Mapped[Optional["Location"]] = relationship(back_populates="pallet")
     location_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("location.id"))
-    supplier: Mapped["Supplier"] = relationship(back_populates="pallets")
     supplier_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("supplier.id"))
-    user: Mapped["User"] = relationship(back_populates="pallets")
     user_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("user.id"))
+
+    user: Mapped["User"] = relationship(back_populates="pallets")
+    location: Mapped[Optional["Location"]] = relationship(back_populates="pallet")
+    supplier: Mapped["Supplier"] = relationship(back_populates="pallets")
 
 
 class Supplier(Base):
