@@ -3,7 +3,9 @@ from fastapi import (
     APIRouter,
 )
 
-from app.storehouse_api.handlers import user_router, supplier_router, pallet_router
+from app.storehouse_api.handlers.pallet_endpoints import pallet_router
+from app.storehouse_api.handlers.supplier_endpoints import supplier_router
+from app.storehouse_api.handlers.user_endpoints import user_router
 from app.utils import fill_up
 
 app = FastAPI(title="storehouse")

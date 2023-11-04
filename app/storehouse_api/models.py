@@ -18,9 +18,9 @@ class CreateUser(BaseModel):
 
 
 class UserUpdate(BaseModel):
-    name: str | None
-    surname: str | None
-    email: EmailStr | None
+    name: Union[str, None]
+    surname: Union[str, None]
+    email: Union[EmailStr, None]
 
 
 class CreatePalletModel(BaseModel):

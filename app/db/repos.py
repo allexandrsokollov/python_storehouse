@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
 
 from app.db.models import User, Pallet, Location, Supplier
-from app.storehouse_api.models import SupplierModel, UserUpdate
+from app.storehouse_api.models import SupplierModel, UserUpdate, UpdatePalletModel
 
 
 class AbstractAsyncRepo(ABC):
@@ -27,10 +27,7 @@ class UserRepo(AbstractAsyncRepo):
         return new_user
 
     async def retrieve(self, user_id: uuid.UUID):
-        query = (
-            select(User)
-            .filter(User.id == user_id)
-        )
+        query = select(User).filter(User.id == user_id)
 
         res = await self.db_session.execute(query)
         user = res.scalars().one_or_none()
@@ -42,7 +39,7 @@ class UserRepo(AbstractAsyncRepo):
         if not user:
             return None
 
-        for var, value in vars(user_data).items():
+        for var, value in (user_data.model_dump(exclude_unset=True)).items():
             setattr(user, var, value)
 
         await self.db_session.flush()
@@ -57,7 +54,6 @@ class UserRepo(AbstractAsyncRepo):
         await self.db_session.delete(user)
 
         return True
-
 
 
 class LocationRepo(AbstractAsyncRepo):
@@ -91,14 +87,45 @@ class PalletRepo(AbstractAsyncRepo):
         return new_pallet
 
     async def get_all(self) -> Iterable[Pallet]:
-        query = (
-            select(Pallet)
-            .options(selectinload(Pallet.supplier), selectinload(Pallet.user))
+        query = select(Pallet).options(
+            selectinload(Pallet.supplier), selectinload(Pallet.user)
         )
         res = await self.db_session.execute(query)
         result = res.scalars().all()
 
         return result
+
+    async def retrieve(self, pallet_id: uuid.UUID):
+        query = (select(Pallet).filter(Pallet.id == pallet_id).
+                 options(selectinload(Pallet.location), selectinload(Pallet.supplier)))
+
+        res = await self.db_session.execute(query)
+        pallet = res.scalars().one_or_none()
+
+        return pallet
+
+    async def update(self, pallet_id: uuid.UUID, pallet_data: UpdatePalletModel):
+        pallet = await self.retrieve(pallet_id)
+
+        if not pallet:
+            return None
+
+        for var, value in pallet_data.model_dump(exclude_unset=True).items():
+            setattr(pallet, var, value)
+
+        await self.db_session.flush()
+
+        return pallet
+
+    async def delete(self, pallet_id: uuid.UUID):
+        pallet = await self.retrieve(pallet_id)
+
+        if not pallet:
+            return None
+
+        await self.db_session.delete(pallet)
+
+        return True
 
 
 class SupplierRepo(AbstractAsyncRepo):
