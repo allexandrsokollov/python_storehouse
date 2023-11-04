@@ -1,10 +1,13 @@
 import uuid
 from abc import ABC, abstractmethod
+from typing import List, Iterable
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload, joinedload
 
 from app.db.models import User, Pallet, Location, Supplier
-from app.storehouse_api.models import SupplierModel
+from app.storehouse_api.models import SupplierModel, UserUpdate
 
 
 class AbstractAsyncRepo(ABC):
@@ -17,11 +20,44 @@ class AbstractAsyncRepo(ABC):
 
 
 class UserRepo(AbstractAsyncRepo):
-    async def create(self, name: str, surname: str, email: str) -> User:
-        new_user = User(name=name, surname=surname, email=email)
+    async def create(self, **fields) -> User:
+        new_user = User(**fields)
         self.db_session.add(new_user)
         await self.db_session.flush()
         return new_user
+
+    async def retrieve(self, user_id: uuid.UUID):
+        query = (
+            select(User)
+            .filter(User.id == user_id)
+        )
+
+        res = await self.db_session.execute(query)
+        user = res.scalars().one_or_none()
+        return user
+
+    async def update(self, user_id: uuid.UUID, user_data: UserUpdate):
+        user = await self.retrieve(user_id=user_id)
+
+        if not user:
+            return None
+
+        for var, value in vars(user_data).items():
+            setattr(user, var, value)
+
+        await self.db_session.flush()
+        return user
+
+    async def delete(self, user_id: uuid.UUID):
+        user = await self.retrieve(user_id)
+
+        if not user:
+            return None
+
+        await self.db_session.delete(user)
+
+        return True
+
 
 
 class LocationRepo(AbstractAsyncRepo):
@@ -53,6 +89,16 @@ class PalletRepo(AbstractAsyncRepo):
         self.db_session.add(new_pallet)
         await self.db_session.flush()
         return new_pallet
+
+    async def get_all(self) -> Iterable[Pallet]:
+        query = (
+            select(Pallet)
+            .options(selectinload(Pallet.supplier), selectinload(Pallet.user))
+        )
+        res = await self.db_session.execute(query)
+        result = res.scalars().all()
+
+        return result
 
 
 class SupplierRepo(AbstractAsyncRepo):
