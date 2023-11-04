@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
 
 from app.db.models import User, Pallet, Location, Supplier
-from app.storehouse_api.models import SupplierModel, UserUpdate, UpdatePalletModel
+from app.storehouse_api.models import SupplierModel, UserUpdate, UpdatePalletModel, UpdateSupplierModel
 
 
 class AbstractAsyncRepo(ABC):
@@ -52,7 +52,6 @@ class UserRepo(AbstractAsyncRepo):
             return None
 
         await self.db_session.delete(user)
-
         return True
 
 
@@ -136,5 +135,42 @@ class SupplierRepo(AbstractAsyncRepo):
         return new_supplier
 
     async def retrieve(self, supplier_uuid: uuid.UUID) -> SupplierModel:
-        supplier = await self.db_session.get(Supplier, supplier_uuid)
-        return SupplierModel(id=supplier.id, name=supplier.name, pallets=None)
+        query = (
+            select(Supplier).filter(Supplier.id == supplier_uuid)
+        )
+        res = await self.db_session.execute(query)
+        data = res.scalars().one_or_none()
+
+        return data
+
+    async def get_all(self):
+        query = (select(Supplier))
+
+        res = await self.db_session.execute(query)
+        data = res.scalars().all()
+
+        return data
+
+    async def update(self, supplier_id: uuid.UUID, supplier_data: UpdateSupplierModel):
+        current = await self.retrieve(supplier_id)
+
+        if not current:
+            return None
+
+        for atr, value in supplier_data.model_dump(exclude_unset=True).items():
+            setattr(current, atr, value)
+
+        await self.db_session.flush()
+
+        return current
+
+    async def delete(self, supplier_id: uuid.UUID):
+        current = await self.retrieve(supplier_id)
+
+        if not current:
+            return None
+
+        await self.db_session.delete(current)
+
+        return True
+

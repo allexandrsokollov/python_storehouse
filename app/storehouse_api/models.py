@@ -54,8 +54,15 @@ class LocationModel(BaseModel):
     pallet: PalletModel | None
 
 
-class SupplierModel(BaseModel):
+class CreateSupplierModel(BaseModel):
+    name: str
+
+
+class SupplierModel(CreateSupplierModel):
     id: uuid.UUID | None
+
+
+class UpdateSupplierModel(BaseModel):
     name: str
 
 
@@ -63,5 +70,3 @@ class SupplierWithPallets(SupplierModel):
     pallets: List[PalletModel] | None
 
 
-class CreateSupplierModel(BaseModel):
-    name: str

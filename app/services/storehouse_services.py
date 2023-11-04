@@ -12,7 +12,7 @@ from app.storehouse_api.models import (
     CreatePalletModel,
     PalletModel,
     UserUpdate,
-    UpdatePalletModel,
+    UpdatePalletModel, UpdateSupplierModel,
 )
 
 engine = create_async_engine(
@@ -82,7 +82,40 @@ class SupplierService:
             async with session.begin():
                 supplier_repo = SupplierRepo(session)
                 supplier = await supplier_repo.retrieve(supplier_uuid)
+
+                if not supplier:
+                    return None
+
                 return SupplierModel(id=supplier.id, name=supplier.name, pallets=None)
+
+    async def get_all(self):
+        async with async_session() as session:
+            async with session.begin():
+                supplier_repo = SupplierRepo(session)
+                data = await supplier_repo.get_all()
+
+                return [SupplierModel.model_validate(row, from_attributes=True) for row in data]
+
+    async def update(self, supplier_id: uuid.UUID, supplier_data: UpdateSupplierModel):
+        async with async_session() as session:
+            async with session.begin():
+                supplier_repo = SupplierRepo(session)
+
+                updated = await supplier_repo.update(supplier_id, supplier_data)
+
+                if not updated:
+                    return None
+
+                return SupplierModel.model_validate(updated, from_attributes=True)
+
+    async def delete(self, supplier_id: uuid.UUID):
+        async with async_session() as session:
+            async with session.begin():
+                supplier_repo = SupplierRepo(session)
+
+                res = await supplier_repo.delete(supplier_id)
+
+                return res
 
 
 class PalletService:
