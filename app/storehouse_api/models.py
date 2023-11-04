@@ -9,29 +9,39 @@ class UserModel(BaseModel):
     name: str
     surname: str
     email: EmailStr
-    # pallets: List["PalletModel"]
 
 
 class CreateUser(BaseModel):
     name: str
     surname: str
     email: EmailStr
-    # pallets: List["PalletModel"]
 
 
-class PalletModel(BaseModel):
-    id: uuid.UUID
-    title: str
-    description: str
-    location: Union["LocationModel", None]
-    supplier_id: uuid.UUID
-    user: UserModel | None
+class UserUpdate(BaseModel):
+    name: str | None
+    surname: str | None
+    email: EmailStr | None
 
 
 class CreatePalletModel(BaseModel):
     title: str
     description: str
     supplier_id: uuid.UUID
+    location_id: uuid.UUID | None
+    user_id: uuid.UUID | None
+
+
+class PalletModel(CreatePalletModel):
+    id: uuid.UUID
+    location: Union["LocationModel", None]
+    supplier: "SupplierModel"
+    user: UserModel | None
+
+
+class UpdatePalletModel(BaseModel):
+    title: str | None
+    description: str | None
+    supplier_id: uuid.UUID | None
     location_id: uuid.UUID | None
     user_id: uuid.UUID | None
 
@@ -47,6 +57,9 @@ class LocationModel(BaseModel):
 class SupplierModel(BaseModel):
     id: uuid.UUID | None
     name: str
+
+
+class SupplierWithPallets(SupplierModel):
     pallets: List[PalletModel] | None
 
 
