@@ -44,6 +44,8 @@ packaging==23.2
     # via build
 pip-tools==7.3.0
     # via -r req.in
+prometheus-client==0.18.0
+    # via starlette-exporter
 pydantic[email]==2.4.2
     # via
     #   -r req.in
@@ -61,7 +63,11 @@ sqlalchemy==2.0.23
     #   -r req.in
     #   alembic
 starlette==0.27.0
-    # via fastapi
+    # via
+    #   fastapi
+    #   starlette-exporter
+starlette-exporter==0.16.0
+    # via -r req.in
 tomli==2.0.1
     # via
     #   build
