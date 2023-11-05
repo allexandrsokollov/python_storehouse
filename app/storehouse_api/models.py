@@ -33,7 +33,7 @@ class CreatePalletModel(BaseModel):
 
 class PalletModel(CreatePalletModel):
     id: uuid.UUID
-    location: Union["DetailLocationModel", None]
+    location: Union["LocationModel", None]
     supplier: "SupplierModel"
     user: UserModel | None
 
@@ -50,6 +50,10 @@ class CreateLocationModel(BaseModel):
     shelving: int
     floor: int
     position: int
+
+
+class LocationModel(CreateLocationModel):
+    id: uuid.UUID
 
 
 class DetailLocationModel(CreateLocationModel):

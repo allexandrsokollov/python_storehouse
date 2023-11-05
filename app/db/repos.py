@@ -131,7 +131,7 @@ class PalletRepo(AbstractAsyncRepo):
 
     async def get_all(self) -> Iterable[Pallet]:
         query = select(Pallet).options(
-            selectinload(Pallet.supplier), selectinload(Pallet.user)
+            selectinload(Pallet.supplier), selectinload(Pallet.user), selectinload(Pallet.location)
         )
         res = await self.db_session.execute(query)
         result = res.scalars().all()
@@ -142,7 +142,7 @@ class PalletRepo(AbstractAsyncRepo):
         query = (
             select(Pallet)
             .filter(Pallet.id == pallet_id)
-            .options(selectinload(Pallet.location), selectinload(Pallet.supplier))
+            .options(selectinload(Pallet.location), selectinload(Pallet.supplier), selectinload(Pallet.location))
         )
 
         res = await self.db_session.execute(query)
