@@ -6,7 +6,8 @@ from fastapi import APIRouter, HTTPException
 from app.services.storehouse_services import UserServie, SupplierService
 from app.storehouse_api.models import (
     CreateSupplierModel,
-    SupplierModel, UpdateSupplierModel,
+    SupplierModel,
+    UpdateSupplierModel,
 )
 
 supplier_router = APIRouter()
@@ -24,7 +25,10 @@ async def get_supplier(supplier_id: uuid.UUID):
     supplier = await supplier_service.get(supplier_id)
 
     if not supplier:
-        raise HTTPException(status_code=400, detail=f'supplier with this id {supplier_id} does not exists')
+        raise HTTPException(
+            status_code=400,
+            detail=f"supplier with this id {supplier_id} does not exists",
+        )
 
     return supplier
 
@@ -43,7 +47,10 @@ async def update_supplier(supplier_id: uuid.UUID, supplier_data: UpdateSupplierM
     updates = await supplier_service.update(supplier_id, supplier_data)
 
     if not updates:
-        raise HTTPException(status_code=400, detail=f'supplier with this id {supplier_id} does not exists')
+        raise HTTPException(
+            status_code=400,
+            detail=f"supplier with this id {supplier_id} does not exists",
+        )
 
     return updates
 
@@ -54,8 +61,9 @@ async def update_supplier(supplier_id: uuid.UUID):
     res = await supplier_service.delete(supplier_id)
 
     if not res:
-        raise HTTPException(status_code=400, detail=f'supplier with this id {supplier_id} does not exists')
+        raise HTTPException(
+            status_code=400,
+            detail=f"supplier with this id {supplier_id} does not exists",
+        )
 
-    return {'success': True}
-
-
+    return {"success": True}

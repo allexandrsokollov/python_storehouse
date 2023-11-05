@@ -1,13 +1,18 @@
 import uuid
 from abc import ABC, abstractmethod
-from typing import List, Iterable
+from typing import Iterable
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload, joinedload
-
+from sqlalchemy.orm import selectinload
 from app.db.models import User, Pallet, Location, Supplier
-from app.storehouse_api.models import SupplierModel, UserUpdate, UpdatePalletModel, UpdateSupplierModel
+from app.storehouse_api.models import (
+    SupplierModel,
+    UserUpdate,
+    UpdatePalletModel,
+    UpdateSupplierModel,
+    CreateLocationModel,
+)
 
 
 class AbstractAsyncRepo(ABC):
@@ -57,14 +62,53 @@ class UserRepo(AbstractAsyncRepo):
 
 class LocationRepo(AbstractAsyncRepo):
     async def create(
-        self, shelving: int, floor: int, position: int, pallet: Pallet | None
+        self, shelving: int, floor: int, position: int
     ) -> Location:
         new_location = Location(
-            shelving=shelving, floor=floor, position=position, pallet=pallet
+            shelving=shelving, floor=floor, position=position, pallet=None
         )
         self.db_session.add(new_location)
         await self.db_session.flush()
         return new_location
+
+    async def get_all(self):
+        query = select(Location).options(selectinload(Location.pallet))
+        res = await self.db_session.execute(query)
+        data = res.scalars().all()
+
+        return data
+
+    async def retrieve(self, location_id: uuid.UUID):
+        query = (
+            select(Location)
+            .filter(Location.id == location_id)
+            .options(selectinload(Location.pallet))
+        )
+        res = await self.db_session.execute(query)
+
+        data = res.scalars().one_or_none()
+        return data
+
+    async def update(self, location_id: uuid.UUID, location_data: CreateLocationModel):
+        location = await self.retrieve(location_id)
+
+        if not location:
+            return None
+
+        for atr, value in location_data.model_dump(exclude_unset=True).items():
+            setattr(location, atr, value)
+
+        await self.db_session.flush()
+        return location
+
+    async def delete(self, location_id: uuid.UUID):
+        location = await self.retrieve(location_id)
+
+        if not location:
+            return None
+
+        await self.db_session.delete(location)
+        return True
 
 
 class PalletRepo(AbstractAsyncRepo):
@@ -95,8 +139,11 @@ class PalletRepo(AbstractAsyncRepo):
         return result
 
     async def retrieve(self, pallet_id: uuid.UUID):
-        query = (select(Pallet).filter(Pallet.id == pallet_id).
-                 options(selectinload(Pallet.location), selectinload(Pallet.supplier)))
+        query = (
+            select(Pallet)
+            .filter(Pallet.id == pallet_id)
+            .options(selectinload(Pallet.location), selectinload(Pallet.supplier))
+        )
 
         res = await self.db_session.execute(query)
         pallet = res.scalars().one_or_none()
@@ -135,16 +182,14 @@ class SupplierRepo(AbstractAsyncRepo):
         return new_supplier
 
     async def retrieve(self, supplier_uuid: uuid.UUID) -> SupplierModel:
-        query = (
-            select(Supplier).filter(Supplier.id == supplier_uuid)
-        )
+        query = select(Supplier).filter(Supplier.id == supplier_uuid)
         res = await self.db_session.execute(query)
         data = res.scalars().one_or_none()
 
         return data
 
     async def get_all(self):
-        query = (select(Supplier))
+        query = select(Supplier)
 
         res = await self.db_session.execute(query)
         data = res.scalars().all()
@@ -173,4 +218,3 @@ class SupplierRepo(AbstractAsyncRepo):
         await self.db_session.delete(current)
 
         return True
-

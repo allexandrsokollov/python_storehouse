@@ -11,10 +11,22 @@ async def fill_up():
 
     for i in range(1200):
         if i % 2 == 0:
-            await pallet_service.create(CreatePalletModel(title=f"pallet_{i}", description=f"description_{i}",
-                                                          supplier_id=supplier_one.id, location_id=None,
-                                                          user_id=None))
+            await pallet_service.create(
+                CreatePalletModel(
+                    title=f"pallet_{i}",
+                    description=f"description_{i}",
+                    supplier_id=supplier_one.id,
+                    location_id=None,
+                    user_id=None,
+                )
+            )
         else:
-            await pallet_service.create(CreatePalletModel(title=f"pallet_{i}", description=f"description_{i}",
-                                                          supplier_id=supplier_two.id, location_id=None,
-                                                          user_id=None))
+            await pallet_service.create(
+                CreatePalletModel(
+                    title=f"pallet_{i}",
+                    description=f"description_{i}",
+                    supplier_id=supplier_two.id,
+                    location_id=None,
+                    user_id=None,
+                )
+            )

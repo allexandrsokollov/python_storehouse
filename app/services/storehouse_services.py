@@ -3,7 +3,7 @@ import uuid
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
 from app import config
-from app.db.repos import UserRepo, SupplierRepo, PalletRepo
+from app.db.repos import UserRepo, SupplierRepo, PalletRepo, LocationRepo
 from app.storehouse_api.models import (
     CreateUser,
     UserModel,
@@ -12,7 +12,10 @@ from app.storehouse_api.models import (
     CreatePalletModel,
     PalletModel,
     UserUpdate,
-    UpdatePalletModel, UpdateSupplierModel,
+    UpdatePalletModel,
+    UpdateSupplierModel,
+    CreateLocationModel,
+    DetailLocationModel,
 )
 
 engine = create_async_engine(
@@ -94,7 +97,10 @@ class SupplierService:
                 supplier_repo = SupplierRepo(session)
                 data = await supplier_repo.get_all()
 
-                return [SupplierModel.model_validate(row, from_attributes=True) for row in data]
+                return [
+                    SupplierModel.model_validate(row, from_attributes=True)
+                    for row in data
+                ]
 
     async def update(self, supplier_id: uuid.UUID, supplier_data: UpdateSupplierModel):
         async with async_session() as session:
@@ -114,6 +120,65 @@ class SupplierService:
                 supplier_repo = SupplierRepo(session)
 
                 res = await supplier_repo.delete(supplier_id)
+
+                return res
+
+
+class LocationService:
+    async def create(self, location: CreateLocationModel):
+        async with async_session() as session:
+            async with session.begin():
+                location_repo = LocationRepo(session)
+                new_location = await location_repo.create(**location.model_dump())
+
+                return DetailLocationModel.model_validate(
+                    new_location, from_attributes=True
+                )
+
+    async def get_all(self):
+        async with async_session() as session:
+            async with session.begin():
+                location_repo = LocationRepo(session)
+                locations = await location_repo.get_all()
+
+                return [
+                    DetailLocationModel.model_validate(row, from_attributes=True)
+                    for row in locations
+                ]
+
+    async def retrieve(self, location_id: uuid.UUID):
+        async with async_session() as session:
+            async with session.begin():
+                location_repo = LocationRepo(session)
+                location_data = await location_repo.retrieve(location_id)
+
+                if not location_data:
+                    return None
+
+                return DetailLocationModel.model_validate(
+                    location_data, from_attributes=True
+                )
+
+    async def update(self, location_id: uuid.UUID, location_data: CreateLocationModel):
+        async with async_session() as session:
+            async with session.begin():
+                location_repo = LocationRepo(session)
+
+                updated_data = await location_repo.update(location_id, location_data)
+
+                if not updated_data:
+                    return updated_data
+
+                return DetailLocationModel.model_validate(
+                    updated_data, from_attributes=True
+                )
+
+    async def delete(self, location_id: uuid.UUID):
+        async with async_session() as session:
+            async with session.begin():
+                location_repo = LocationRepo(session)
+
+                res = await location_repo.delete(location_id)
 
                 return res
 

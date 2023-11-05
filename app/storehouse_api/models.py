@@ -33,7 +33,7 @@ class CreatePalletModel(BaseModel):
 
 class PalletModel(CreatePalletModel):
     id: uuid.UUID
-    location: Union["LocationModel", None]
+    location: Union["DetailLocationModel", None]
     supplier: "SupplierModel"
     user: UserModel | None
 
@@ -46,12 +46,15 @@ class UpdatePalletModel(BaseModel):
     user_id: uuid.UUID | None
 
 
-class LocationModel(BaseModel):
-    id: uuid.UUID | None
+class CreateLocationModel(BaseModel):
     shelving: int
     floor: int
     position: int
-    pallet: PalletModel | None
+
+
+class DetailLocationModel(CreateLocationModel):
+    id: uuid.UUID
+    pallet: Union["PalletModel", None]
 
 
 class CreateSupplierModel(BaseModel):
@@ -68,5 +71,3 @@ class UpdateSupplierModel(BaseModel):
 
 class SupplierWithPallets(SupplierModel):
     pallets: List[PalletModel] | None
-
-
