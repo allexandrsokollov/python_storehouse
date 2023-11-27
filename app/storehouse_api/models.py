@@ -34,7 +34,7 @@ class CreatePalletModel(BaseModel):
 class PalletModel(CreatePalletModel):
     id: uuid.UUID
     location: Union["LocationModel", None]
-    supplier: "SupplierModel"
+    supplier: Union["SupplierModel", None]
     user: UserModel | None
 
 

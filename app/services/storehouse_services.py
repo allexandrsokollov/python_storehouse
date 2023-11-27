@@ -188,6 +188,7 @@ class PalletService:
         async with async_session() as session:
             async with session.begin():
                 pallet_repo = PalletRepo(session)
+                print(pallet.title, pallet.supplier_id, pallet.description, pallet.location_id)
                 new_pallet = await pallet_repo.create(
                     title=pallet.title,
                     description=pallet.description,
@@ -199,6 +200,9 @@ class PalletService:
                     title=new_pallet.title,
                     description=new_pallet.description,
                     supplier_id=new_pallet.supplier_id,
+                    location_id=pallet.location_id,
+                    user_id=pallet.user_id,
+                    supplier=None,
                     location=None,
                     user=None,
                 )

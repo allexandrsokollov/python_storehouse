@@ -3,6 +3,7 @@ pydantic[email]
 alembic
 pip-tools
 sqlalchemy
+psycopg2-binary
 asyncpg
 uvicorn
 python-dotenv
