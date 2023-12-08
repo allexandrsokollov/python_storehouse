@@ -1,7 +1,9 @@
 import uuid
-from typing import Union, List
+from typing import Union, List, TypeVar, Generic
 
 from pydantic import BaseModel, EmailStr
+
+T = TypeVar("T", bound=BaseModel)
 
 
 class UserModel(BaseModel):
@@ -75,3 +77,8 @@ class UpdateSupplierModel(BaseModel):
 
 class SupplierWithPallets(SupplierModel):
     pallets: List[PalletModel] | None
+
+
+class MultiResponseModel(BaseModel, Generic[T]):
+    data: List[T]
+    count: int

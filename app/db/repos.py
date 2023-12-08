@@ -1,8 +1,9 @@
 import uuid
 from abc import ABC, abstractmethod
-from typing import Iterable
+from typing import Tuple, List
 
 from sqlalchemy import select
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from app.db.models import User, Pallet, Location, Supplier
@@ -61,9 +62,7 @@ class UserRepo(AbstractAsyncRepo):
 
 
 class LocationRepo(AbstractAsyncRepo):
-    async def create(
-        self, shelving: int, floor: int, position: int
-    ) -> Location:
+    async def create(self, shelving: int, floor: int, position: int) -> Location:
         new_location = Location(
             shelving=shelving, floor=floor, position=position, pallet=None
         )
@@ -72,11 +71,14 @@ class LocationRepo(AbstractAsyncRepo):
         return new_location
 
     async def get_all(self, offset: int, limit: int):
+        count_query = select(func.count()).select_from(Location)
+        count = await self.db_session.scalar(count_query)
+
         query = select(Location).options(selectinload(Location.pallet))
         res = await self.db_session.execute(query.limit(limit).offset(offset))
         data = res.scalars().all()
 
-        return data
+        return data, count
 
     async def retrieve(self, location_id: uuid.UUID):
         query = (
@@ -129,20 +131,32 @@ class PalletRepo(AbstractAsyncRepo):
         await self.db_session.flush()
         return new_pallet
 
-    async def get_all(self, offset: int, limit: int) -> Iterable[Pallet]:
+    async def get_all(self, offset: int, limit: int) -> Tuple[List[Pallet], int]:
         query = select(Pallet).options(
-            selectinload(Pallet.supplier), selectinload(Pallet.user), selectinload(Pallet.location)
+            selectinload(Pallet.supplier),
+            selectinload(Pallet.user),
+            selectinload(Pallet.location),
         )
+
+        # Получаем общее количество элементов
+        count_query = select(func.count()).select_from(Pallet)
+        count = await self.db_session.scalar(count_query)
+
+        # Получаем данные с учетом ограничений по offset и limit
         res = await self.db_session.execute(query.limit(limit).offset(offset))
         result = res.scalars().all()
 
-        return result
+        return result, count
 
     async def retrieve(self, pallet_id: uuid.UUID):
         query = (
             select(Pallet)
             .filter(Pallet.id == pallet_id)
-            .options(selectinload(Pallet.location), selectinload(Pallet.supplier), selectinload(Pallet.location))
+            .options(
+                selectinload(Pallet.location),
+                selectinload(Pallet.supplier),
+                selectinload(Pallet.location),
+            )
         )
 
         res = await self.db_session.execute(query)
@@ -191,12 +205,13 @@ class SupplierRepo(AbstractAsyncRepo):
     async def get_all(self, offset: int, limit: int):
         query = select(Supplier)
 
+        count_query = select(func.count()).select_from(Supplier)
+        count = await self.db_session.scalar(count_query)
+
         res = await self.db_session.execute(query.limit(limit).offset(offset))
         data = res.scalars().all()
-        print(type(data))
-        print(type(data[0]))
 
-        return data
+        return data, count
 
     async def update(self, supplier_id: uuid.UUID, supplier_data: UpdateSupplierModel):
         current = await self.retrieve(supplier_id)

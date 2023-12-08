@@ -95,12 +95,15 @@ class SupplierService:
         async with async_session() as session:
             async with session.begin():
                 supplier_repo = SupplierRepo(session)
-                data = await supplier_repo.get_all(offset=offset, limit=limit)
+                suppliers, count = await supplier_repo.get_all(
+                    offset=offset, limit=limit
+                )
 
-                return [
-                    SupplierModel.model_validate(row, from_attributes=True)
-                    for row in data
-                ]
+                data = []
+                for row in suppliers:
+                    data.append(SupplierModel.model_validate(row, from_attributes=True))
+
+                return data, count
 
     async def update(self, supplier_id: uuid.UUID, supplier_data: UpdateSupplierModel):
         async with async_session() as session:
@@ -139,12 +142,17 @@ class LocationService:
         async with async_session() as session:
             async with session.begin():
                 location_repo = LocationRepo(session)
-                locations = await location_repo.get_all(offset=offset, limit=limit)
+                locations, count = await location_repo.get_all(
+                    offset=offset, limit=limit
+                )
 
-                return [
-                    DetailLocationModel.model_validate(row, from_attributes=True)
-                    for row in locations
-                ]
+                data = []
+                for row in locations:
+                    data.append(
+                        DetailLocationModel.model_validate(row, from_attributes=True)
+                    )
+
+                return data, count
 
     async def retrieve(self, location_id: uuid.UUID):
         async with async_session() as session:
@@ -188,7 +196,12 @@ class PalletService:
         async with async_session() as session:
             async with session.begin():
                 pallet_repo = PalletRepo(session)
-                print(pallet.title, pallet.supplier_id, pallet.description, pallet.location_id)
+                print(
+                    pallet.title,
+                    pallet.supplier_id,
+                    pallet.description,
+                    pallet.location_id,
+                )
                 new_pallet = await pallet_repo.create(
                     title=pallet.title,
                     description=pallet.description,
@@ -211,13 +224,13 @@ class PalletService:
         async with async_session() as session:
             async with session.begin():
                 pallet_repo = PalletRepo(session)
-                pallets = await pallet_repo.get_all(offset=offset, limit=limit)
+                pallets, count = await pallet_repo.get_all(offset=offset, limit=limit)
 
                 palett_models = [
                     PalletModel.model_validate(row, from_attributes=True)
                     for row in pallets
                 ]
-                return palett_models
+                return palett_models, count
 
     async def retrieve(self, pallet_id: uuid.UUID):
         async with async_session() as session:
