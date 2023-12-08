@@ -30,9 +30,9 @@ async def get_supplier(location_id: uuid.UUID):
 
 
 @location_router.get("/", response_model=List[DetailLocationModel])
-async def get_all_suppliers():
+async def get_all_suppliers(offset: int, limit: int):
     supplier_service = LocationService()
-    suppliers = await supplier_service.get_all()
+    suppliers = await supplier_service.get_all(offset=offset, limit=limit)
 
     return suppliers
 

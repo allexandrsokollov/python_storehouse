@@ -91,11 +91,11 @@ class SupplierService:
 
                 return SupplierModel(id=supplier.id, name=supplier.name, pallets=None)
 
-    async def get_all(self):
+    async def get_all(self, offset: int, limit: int):
         async with async_session() as session:
             async with session.begin():
                 supplier_repo = SupplierRepo(session)
-                data = await supplier_repo.get_all()
+                data = await supplier_repo.get_all(offset=offset, limit=limit)
 
                 return [
                     SupplierModel.model_validate(row, from_attributes=True)
@@ -135,11 +135,11 @@ class LocationService:
                     new_location, from_attributes=True
                 )
 
-    async def get_all(self):
+    async def get_all(self, offset: int, limit: int):
         async with async_session() as session:
             async with session.begin():
                 location_repo = LocationRepo(session)
-                locations = await location_repo.get_all()
+                locations = await location_repo.get_all(offset=offset, limit=limit)
 
                 return [
                     DetailLocationModel.model_validate(row, from_attributes=True)
@@ -207,11 +207,11 @@ class PalletService:
                     user=None,
                 )
 
-    async def get_all(self):
+    async def get_all(self, offset: int, limit: int):
         async with async_session() as session:
             async with session.begin():
                 pallet_repo = PalletRepo(session)
-                pallets = await pallet_repo.get_all()
+                pallets = await pallet_repo.get_all(offset=offset, limit=limit)
 
                 palett_models = [
                     PalletModel.model_validate(row, from_attributes=True)

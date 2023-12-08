@@ -34,9 +34,9 @@ async def get_supplier(supplier_id: uuid.UUID):
 
 
 @supplier_router.get("/", response_model=List[SupplierModel])
-async def get_all_suppliers():
+async def get_all_suppliers(offset: int, limit: int):
     supplier_service = SupplierService()
-    suppliers = await supplier_service.get_all()
+    suppliers = await supplier_service.get_all(offset=offset, limit=limit)
 
     return suppliers
 

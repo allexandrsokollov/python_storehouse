@@ -71,9 +71,9 @@ class LocationRepo(AbstractAsyncRepo):
         await self.db_session.flush()
         return new_location
 
-    async def get_all(self):
+    async def get_all(self, offset: int, limit: int):
         query = select(Location).options(selectinload(Location.pallet))
-        res = await self.db_session.execute(query)
+        res = await self.db_session.execute(query.limit(limit).offset(offset))
         data = res.scalars().all()
 
         return data
@@ -129,11 +129,11 @@ class PalletRepo(AbstractAsyncRepo):
         await self.db_session.flush()
         return new_pallet
 
-    async def get_all(self) -> Iterable[Pallet]:
+    async def get_all(self, offset: int, limit: int) -> Iterable[Pallet]:
         query = select(Pallet).options(
             selectinload(Pallet.supplier), selectinload(Pallet.user), selectinload(Pallet.location)
         )
-        res = await self.db_session.execute(query)
+        res = await self.db_session.execute(query.limit(limit).offset(offset))
         result = res.scalars().all()
 
         return result
@@ -188,11 +188,13 @@ class SupplierRepo(AbstractAsyncRepo):
 
         return data
 
-    async def get_all(self):
+    async def get_all(self, offset: int, limit: int):
         query = select(Supplier)
 
-        res = await self.db_session.execute(query)
+        res = await self.db_session.execute(query.limit(limit).offset(offset))
         data = res.scalars().all()
+        print(type(data))
+        print(type(data[0]))
 
         return data
 

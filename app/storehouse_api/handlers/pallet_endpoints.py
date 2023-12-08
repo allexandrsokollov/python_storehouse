@@ -16,9 +16,9 @@ async def create_pallet(pallet: CreatePalletModel):
 
 
 @pallet_router.get("/", response_model=List[PalletModel])
-async def get_pallets():
+async def get_pallets(offset: int, limit: int):
     pallet_service = PalletService()
-    pallets = await pallet_service.get_all()
+    pallets = await pallet_service.get_all(offset=offset, limit=limit)
     return pallets
 
 
