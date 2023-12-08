@@ -4,7 +4,7 @@ from typing import List
 from fastapi import APIRouter, HTTPException
 
 from app.services.storehouse_services import LocationService
-from app.storehouse_api.models import DetailLocationModel, CreateLocationModel
+from app.storehouse_api.models import DetailLocationModel, CreateLocationModel, MultiResponseModel
 
 location_router = APIRouter()
 
@@ -29,12 +29,16 @@ async def get_supplier(location_id: uuid.UUID):
     return supplier
 
 
-@location_router.get("/", response_model=List[DetailLocationModel])
-async def get_all_suppliers():
+@location_router.get(
+    "/", response_model=MultiResponseModel[DetailLocationModel]
+)
+async def get_all_suppliers(offset: int, limit: int):
     supplier_service = LocationService()
-    suppliers = await supplier_service.get_all()
+    suppliers, count = await supplier_service.get_all(offset=offset, limit=limit)
 
-    return suppliers
+    response = MultiResponseModel[DetailLocationModel](data=suppliers, count=count)
+
+    return response
 
 
 @location_router.put("/{location_id}", response_model=DetailLocationModel)

@@ -3,11 +3,11 @@ from typing import List
 
 from fastapi import APIRouter, HTTPException
 
-from app.services.storehouse_services import UserServie, SupplierService
+from app.services.storehouse_services import SupplierService
 from app.storehouse_api.models import (
     CreateSupplierModel,
     SupplierModel,
-    UpdateSupplierModel,
+    UpdateSupplierModel, MultiResponseModel,
 )
 
 supplier_router = APIRouter()
@@ -33,12 +33,13 @@ async def get_supplier(supplier_id: uuid.UUID):
     return supplier
 
 
-@supplier_router.get("/", response_model=List[SupplierModel])
-async def get_all_suppliers():
+@supplier_router.get("/", response_model=MultiResponseModel[SupplierModel])
+async def get_all_suppliers(offset: int, limit: int):
     supplier_service = SupplierService()
-    suppliers = await supplier_service.get_all()
+    suppliers, count = await supplier_service.get_all(offset=offset, limit=limit)
 
-    return suppliers
+    response = MultiResponseModel[SupplierModel](data=suppliers, count=count)
+    return response
 
 
 @supplier_router.put("/{supplier_id}", response_model=SupplierModel)

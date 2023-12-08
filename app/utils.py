@@ -11,7 +11,7 @@ async def fill_up():
 
     for i in range(1200):
         if i % 2 == 0:
-            print('creating model')
+            print("creating model")
             await pallet_service.create(
                 CreatePalletModel(
                     title=f"pallet_{i}",

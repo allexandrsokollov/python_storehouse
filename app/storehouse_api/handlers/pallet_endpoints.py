@@ -4,7 +4,7 @@ from typing import List
 from fastapi import APIRouter, HTTPException
 
 from app.services.storehouse_services import PalletService
-from app.storehouse_api.models import PalletModel, CreatePalletModel, UpdatePalletModel
+from app.storehouse_api.models import PalletModel, CreatePalletModel, UpdatePalletModel, MultiResponseModel
 
 pallet_router = APIRouter()
 
@@ -15,11 +15,13 @@ async def create_pallet(pallet: CreatePalletModel):
     return await pallet_service.create(pallet)
 
 
-@pallet_router.get("/", response_model=List[PalletModel])
-async def get_pallets():
+@pallet_router.get("/", response_model=MultiResponseModel[PalletModel])
+async def get_pallets(offset: int, limit: int):
     pallet_service = PalletService()
-    pallets = await pallet_service.get_all()
-    return pallets
+    pallets, count = await pallet_service.get_all(offset=offset, limit=limit)
+
+    response = MultiResponseModel[PalletModel](data=pallets, count=count)
+    return response
 
 
 @pallet_router.get("/{pallet_id}", response_model=PalletModel)
