@@ -33,6 +33,11 @@ class CreatePalletModel(BaseModel):
     user_id: uuid.UUID | None
 
 
+class PalletModelMain(CreatePalletModel):
+    id: uuid.UUID
+    location: Union["LocationModel", None]
+
+
 class PalletModel(CreatePalletModel):
     id: uuid.UUID
     location: Union["LocationModel", None]
@@ -82,3 +87,14 @@ class SupplierWithPallets(SupplierModel):
 class MultiResponseModel(BaseModel, Generic[T]):
     data: List[T]
     count: int
+
+
+class Statistics(BaseModel):
+    total_suppliers: int
+    suppliers_with_pallets: int
+    total_locations: int
+    locations_with_pallets: int
+    total_pallets: int
+    pallets_in_locations: int
+    pallets_with_suppliers: int
+    pallets_with_users: int

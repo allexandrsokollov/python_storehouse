@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Statistics Page</title>
+  <!-- Подключаем Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+
+<body>
+
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" href="http://localhost/pages/">Pallets</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="http://localhost/pages/locations">Locations</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="http://localhost/pages/suppliers">Suppliers</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="http://localhost/pages/stats">Stats</a>
+            </li>
+            <li class="nav-item">
+                <a class="btn btn-secondary" href="http://localhost/pages/pallets/create/">Add Pallet</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+
+<div class="container mx-auto">
+  <div class="d-flex flex-column align-items-center justify-content-center">
+    <h2 class="text-center mb-4">Статистика</h2>
+
+    <div class="card text-center mb-3" style="width: 18rem;">
+      <div class="card-body">
+        <h5 class="card-title">Поставщики</h5>
+        <p class="card-text">Всего: <span id="totalSuppliers"></span></p>
+        <p class="card-text">С поставками: <span id="suppliersWithPallets"></span></p>
+      </div>
+    </div>
+
+    <div class="card text-center mb-3" style="width: 18rem;">
+      <div class="card-body">
+        <h5 class="card-title">Местоположения</h5>
+        <p class="card-text">Всего: <span id="totalLocations"></span></p>
+        <p class="card-text">С палетами: <span id="locationsWithPallets"></span></p>
+      </div>
+    </div>
+
+    <div class="card text-center" style="width: 18rem;">
+      <div class="card-body">
+        <h5 class="card-title">Палеты</h5>
+        <p class="card-text">Всего: <span id="totalPallets"></span></p>
+        <p class="card-text">В местах: <span id="palletsInLocations"></span></p>
+        <p class="card-text">С поставщиками: <span id="palletsWithSuppliers"></span></p>
+        <p class="card-text">С пользователями: <span id="palletsWithUsers"></span></p>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Подключаем Bootstrap JS и Popper.js для всплывающих подсказок (tooltip) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  // Функция для получения данных из API и обновления страницы
+  async function fetchData() {
+    try {
+      const response = await fetch('http://localhost/pages/get_statistics'); // Замените URL_API_STATISTICS на адрес вашего API
+      const data = await response.json();
+
+      // Обновление элементов на странице с полученными данными
+      document.getElementById('totalSuppliers').innerText = data.total_suppliers;
+      document.getElementById('suppliersWithPallets').innerText = data.suppliers_with_pallets;
+      document.getElementById('totalLocations').innerText = data.total_locations;
+      document.getElementById('locationsWithPallets').innerText = data.locations_with_pallets;
+      document.getElementById('totalPallets').innerText = data.total_pallets;
+      document.getElementById('palletsInLocations').innerText = data.pallets_in_locations;
+      document.getElementById('palletsWithSuppliers').innerText = data.pallets_with_suppliers;
+      document.getElementById('palletsWithUsers').innerText = data.pallets_with_users;
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      // Здесь можно добавить обработку ошибок
+    }
+  }
+
+  // Вызов функции при загрузке страницы
+  window.addEventListener('load', () => {
+    fetchData();
+  });
+</script>
+
+</body>
+</html>

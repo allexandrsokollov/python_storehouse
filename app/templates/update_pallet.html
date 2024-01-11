@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- ...существующие meta и title теги... -->
+    <!-- Подключение Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+    <!-- Подключение опционального Bootstrap JavaScript и Popper.js, если вам нужны компоненты типа модальных окон или всплывающих сообщений -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.9.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</head>
+<body>
+
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" href="http://localhost/pages/">Pallets</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="http://localhost/pages/locations">Locations</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="http://localhost/pages/suppliers">Suppliers</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="http://localhost/pages/stats">Stats</a>
+            </li>
+            <li class="nav-item">
+                <a class="btn btn-secondary" href="http://localhost/pages/pallets/create/">Add Pallet</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<!-- Добавим невидимое поле для хранения ID паллеты -->
+<input type="hidden" id="pallet_id" name="pallet_id">
+<div class="container mt-5"> <!-- mt-5 добавляет верхний отступ для визуального пространства -->
+    <div class="row">
+        <div class="col-md-6 offset-md-3"> <!-- Центрирует форму в середине страницы -->
+            <h2 class="text-center mb-4">Edit Pallet</h2> <!-- Заголовок центрируется и добавляется отступ снизу -->
+
+            <!-- Форма с применением Bootstrap классов -->
+            <form id="updateForm">
+                <div class="form-group">
+                    <label for="title">Title:</label>
+                    <input type="text" class="form-control" id="title" name="title">
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description:</label>
+                    <input type="text" class="form-control" id="description" name="description">
+                </div>
+
+                <div class="form-group">
+                    <label for="supplier_id">Supplier:</label>
+                    <select class="form-control" id="supplier_id" name="supplier_id"></select>
+                </div>
+
+                <div class="form-group">
+                    <label for="location_id">Location:</label>
+                    <select class="form-control" id="location_id" name="location_id"></select>
+                </div>
+
+                <button type="button" class="btn btn-primary" onclick="submitForm()">Update Pallet</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Функция для загрузки данных паллеты и заполнения формы
+function loadPalletData(palletId) {
+    const url = `http://localhost/pallets/${palletId}`;
+
+    fetch(url)
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok ' + response.statusText);
+        }
+        return response.json();
+    })
+    .then(data => {
+        document.getElementById('pallet_id').value = palletId;
+        document.getElementById('title').value = data.title || '';
+        document.getElementById('description').value = data.description || '';
+        document.getElementById('supplier_id').value = data.supplier_id || '';
+        document.getElementById('location_id').value = data.location_id || '';
+    })
+
+}
+
+// Функция для отправки обновленных данных
+function submitForm() {
+    const palletId = document.getElementById('pallet_id').value; // Убедитесь, что есть скрытое поле с этим ID
+    const updateUrl = `http://localhost/pallets/${palletId}`;
+
+    // Собираем данные для отправки
+    const formData = {
+        title: document.getElementById('title').value || 'none',
+        description: document.getElementById('description').value || null,
+        supplier_id: document.getElementById('supplier_id').value || null,
+        location_id: document.getElementById('location_id').value || null,
+        user_id: null
+    };
+
+    // Отправка данных методом PUT
+    fetch(updateUrl, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            // Если для API требуются дополнительные заголовки, например, токен авторизации,
+            // их нужно добавить здесь
+            // 'Authorization': 'Bearer YOUR_TOKEN_HERE'
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => {
+        if (!response.ok) {
+            // Если сервер вернул ошибку, выбрасываем исключение
+            throw new Error(`Network response was not ok: ${response.statusText}`);
+        }
+        return response.json(); // Попытка преобразовать ответ в JSON
+    })
+    .then(data => {
+        console.log('Success:', data);
+        alert('Pallet updated successfully!');
+
+        // Редирект на другую страницу
+        window.location.href = 'http://localhost/pages';
+    })
+    .catch(error => {
+        console.error('Failed to update the pallet:', error);
+        alert('Failed to update the pallet.');
+    });
+}
+function loadLocations() {
+    const url = 'http://localhost/pages/empty_locations'; // Исправленный API endpoint для получения списка локаций
+
+    fetch(url)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok ' + response.statusText);
+            }
+            return response.json();
+        })
+        .then(json => {
+            const locations = json.data; // Получаем массив данных из ключа "data"
+            const locationSelect = document.getElementById('location_id');
+
+            locations.forEach(location => {
+                // Создание текста для отображения, например, "1-2-3" для полки 1, этажа 2, позиции 3
+                const displayText = `Shelving ${location.shelving} - Floor ${location.floor} - Position ${location.position}`;
+                const option = new Option(displayText, location.id); // создаем опцию c идентификатором локации в качестве value
+                locationSelect.appendChild(option);
+            });
+        })
+}
+function loadSuppliers() {
+    const url = 'http://localhost/suppliers/?offset=0&limit=9990'; // API endpoint для получения списка поставщиков
+
+    fetch(url)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok ' + response.statusText);
+            }
+            return response.json();
+        })
+        .then(json => {
+            const suppliers = json.data; // Получаем массив данных из ключа "data"
+            const supplierSelect = document.getElementById('supplier_id');
+
+            suppliers.forEach(supplier => {
+                const option = new Option(supplier.name, supplier.id);
+                supplierSelect.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading suppliers:', error);
+            alert('Error loading supplier data: ' + error.message);
+        });
+}
+
+window.onload = function() {
+  // Получаем текущий URL и берем последний сегмент пути как pallet_id
+  const currentUrl = new URL(window.location.href);
+  const palletId = currentUrl.pathname.split('/').pop();
+
+    loadSuppliers();
+    loadLocations();
+    loadPalletData(palletId);
+
+    const locations = json.data; // Получаем массив данных из ключа "data"
+            const locationSelect = document.getElementById('location_id');
+
+            locations.forEach(location => {
+                // Создание текста для отображения, например, "1-2-3" для полки 1, этажа 2, позиции 3
+                const displayText = `Shelving ${location.shelving} - Floor ${location.floor} - Position ${location.position}`;
+                const option = new Option(displayText, location.id); // создаем опцию c идентификатором локации в качестве value
+                locationSelect.appendChild(option)
+            });
+}
+</script>
+
+</body>
+</html>

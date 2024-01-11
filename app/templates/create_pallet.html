@@ -1,0 +1,113 @@
+<head>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+</head>
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" href="http://localhost/pages/">Pallets</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="http://localhost/pages/locations">Locations</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="http://localhost/pages/suppliers">Suppliers</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="http://localhost/pages/stats">Stats</a>
+            </li>
+            <li class="nav-item">
+                <a class="btn btn-secondary" href="http://localhost/pages/pallets/create/">Add Pallet</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container h-100">
+  <div class="row h-100 justify-content-center align-items-center">
+    <div class="col-6">
+      <div class="card">
+        <div class="card-body">
+          <form id="resourceForm">
+            <div class="form-group">
+              <label for="titleInput">Title</label>
+              <input type="text" class="form-control" id="titleInput" name="title" required>
+            </div>
+            <div class="form-group">
+              <label for="descriptionTextarea">Description</label>
+              <textarea class="form-control" id="descriptionTextarea" name="description" rows="3" required></textarea>
+            </div>
+            <div class="form-group">
+              <label for="supplierSelect">Supplier</label>
+              <select class="form-control" id="supplierSelect" name="supplier_id" required></select>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+document.addEventListener('DOMContentLoaded', () => {
+  fetch('http://localhost/suppliers/?offset=0&limit=999999') // Замените URL_API_SUPPLIERS соответствующим URL вашего API
+            .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok ' + response.statusText);
+            }
+            return response.json();
+        })
+    .then(json => {
+      const supplierSelect = document.getElementById('supplierSelect');
+      const suppliers = json.data;
+      suppliers.forEach(supplier => {
+        const option = document.createElement('option');
+        option.value = supplier.id; // Используйте реальный идентификатор поставщика
+        option.textContent = supplier.name; // Используйте реальное имя поставщика
+        supplierSelect.appendChild(option);
+      });
+    })
+    .catch(error => console.error('Error fetching suppliers:', error));
+});
+
+
+// Функция для обработки отправки формы
+document.getElementById('resourceForm').addEventListener('submit', function(event) {
+  event.preventDefault();
+
+  // Собираем данные формы
+  const formData = {
+    title: document.getElementById('titleInput').value,
+    description: document.getElementById('descriptionTextarea').value,
+    supplier_id: document.getElementById('supplierSelect').value,
+    location_id: null,
+    user_id: null
+  };
+
+  // Отправляем данные на сервер
+  fetch('http://localhost/pallets/', { // Замените URL_API_RESOURCES соответствующим URL вашего API
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(formData)
+  })
+  .then(response => {
+    if (response.ok) {
+      return response.json();
+    } else {
+      throw new Error('Something went wrong');
+    }
+  })
+  .then(data => {
+    console.log(data);
+    // После успешной отправки данные перенаправляем пользователя на главную страницу
+    window.location.href = 'http://localhost/pages';
+  })
+  .catch(error => console.error('Error:', error));
+});
+
+</script>

@@ -1,0 +1,141 @@
+
+<html>
+<head>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+</head>
+  <body>
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" href="http://localhost/pages/">Pallets</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="http://localhost/pages/locations">Locations</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="http://localhost/pages/suppliers">Suppliers</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="http://localhost/pages/stats">Stats</a>
+            </li>
+            <li class="nav-item">
+                <a class="btn btn-secondary" href="http://localhost/pages/pallets/create/">Add Pallet</a>
+            </li>
+        </ul>
+<form id="searchForm" class="form-inline ml-auto mt-2">
+    <input type="text" id="searchInput" class="form-control mr-2" placeholder="Поиск паллетов">
+    <select id="supplierFilter" class="custom-select mr-2">
+        <!-- Здесь будут заполнены опции фильтра поставщиков -->
+    </select>
+    <button type="submit" class="btn btn-outline-success">Поиск</button>
+</form>
+    </div>
+</nav>
+
+
+
+<div id="data-container" class="row mt-3 mb-3 ml-3 mr-3">
+    <!-- Сюда будут добавляться данные через JavaScript -->
+</div>
+
+
+<div class="pagination d-flex justify-content-center">
+    <a id="previous-page" class="btn btn-primary" href="#" style="display: none;">Предыдущая страница</a>
+    <a id="next-page" class="btn btn-primary ml-1" href="#">Следующая страница</a>
+    <a id="count-info" class="btn btn-secondary ml-1" href="#" onclick="return false;"></a>
+</div>
+
+
+<!-- ...подключение скриптов Bootstrap... -->
+
+<script>
+// JavaScript для загрузки и рендеринга данных с помощью API
+let currentPage = 1;
+const perPage = 30;
+let currentSearch = '';
+let currentSupplierId = '';
+
+function fetchPallets(page, search = '', supplierId = '') {
+    let apiUrl = `http://localhost/pallets/?offset=${(page - 1) * perPage}&limit=${perPage}`;
+    apiUrl += search ? `&search=${encodeURIComponent(search)}` : '';
+    apiUrl += supplierId ? `&supplier_id=${encodeURIComponent(supplierId)}` : '';
+
+    fetch(apiUrl)
+        .then(response => response.json())
+        .then(data => {
+            renderPallets(data.data);  // Функция отображения данных
+            document.getElementById('count-info').textContent = `Всего паллетов: ${data.count}`;
+            currentPage = page;
+
+            // Обновление состояния кнопок переключения страниц
+            document.getElementById('previous-page').style.display = currentPage > 1 ? 'block' : 'none';
+            document.getElementById('next-page').style.display = data.data.length < perPage ? 'none' : 'block';
+        })
+        .catch(error => console.error('Ошибка при получении данных:', error));
+}
+
+function fetchSuppliers() {
+    const apiUrl = 'http://localhost/suppliers/?offset=0&limit=999999';
+
+    fetch(apiUrl)
+        .then(response => response.json())
+        .then(result => {
+            const suppliersData = result.data; // Используем ключ 'data' из ответа API
+            const supplierFilter = document.getElementById('supplierFilter');
+            // Добавляем первую опцию как "Выберите поставщика"
+            supplierFilter.appendChild(new Option('Выберите поставщика', ''));
+            suppliersData.forEach(supplier => {
+                const option = new Option(supplier.name, supplier.id);
+                supplierFilter.appendChild(option);
+            });
+        })
+        .catch(error => console.error('Ошибка при получении списка поставщиков:', error));
+}
+
+document.getElementById('searchForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const searchInput = document.getElementById('searchInput').value.trim();
+    const supplierFilter = document.getElementById('supplierFilter');
+    const supplierId = supplierFilter.value;
+    currentSearch = searchInput;
+    currentSupplierId = supplierId; // Обновляем глобальную переменную с выбранным поставщиком
+    fetchPallets(1, currentSearch, currentSupplierId);
+});
+document.getElementById('previous-page').addEventListener('click', (e) => {
+    e.preventDefault();
+    if (currentPage > 1) {
+        fetchPallets(currentPage - 1, currentSearch, currentSupplierId); // Используем currentSupplierId вместе с currentSearch
+    }
+});
+
+document.getElementById('next-page').addEventListener('click', (e) => {
+    e.preventDefault();
+    fetchPallets(currentPage + 1, currentSearch, currentSupplierId); // Используем currentSupplierId вместе с currentSearch
+});
+function renderPallets(pallets) {
+    const dataContainer = document.getElementById('data-container');
+    dataContainer.innerHTML = ''; // Очищаем предыдущие данные
+
+pallets.forEach(item => {
+        const palletHtml = `
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 mb-3">
+                <a href="http://localhost/pages/pallets/${item.id}" class="data-item d-block text-decoration-none">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">${item.title}</h5>
+                            <p class="card-text">${item.description}</p>
+                        </div>
+                    </div>
+                </a>
+            </div>`;
+    dataContainer.innerHTML += palletHtml;
+});
+}
+
+// Начальная загрузка данных
+fetchPallets(currentPage);
+fetchSuppliers()
+</script>
+</body>
+</html>

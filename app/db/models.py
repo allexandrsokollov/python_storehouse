@@ -15,6 +15,7 @@ class User(Base):
     surname: Mapped[str]
     email: Mapped[str] = mapped_column(unique=True)
     is_active: Mapped[bool] = mapped_column(default=True)
+
     pallets: Mapped[List["Pallet"]] = relationship(back_populates="user")
 
 
@@ -25,6 +26,7 @@ class Location(Base):
     shelving: Mapped[int] = mapped_column(nullable=False)
     floor: Mapped[int] = mapped_column(nullable=False)
     position: Mapped[int] = mapped_column(nullable=False)
+
     pallet: Mapped[Optional["Pallet"]] = relationship(back_populates="location")
 
     __table_args__ = (

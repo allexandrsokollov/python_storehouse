@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" href="http://localhost/pages/">Pallets</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="http://localhost/pages/locations">Locations</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="http://localhost/pages/suppliers">Suppliers</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="http://localhost/pages/stats">Stats</a>
+            </li>
+            <li class="nav-item">
+                <a class="btn btn-secondary" href="http://localhost/pages/pallets/create/">Add Pallet</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+<div class="container mt-5">
+    <div class="row" id="tilesContainer">
+        <!-- Здесь будут загружены плитки -->
+    </div>
+</div>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    fetch('http://localhost/location/?offset=0&limit=99999') // Замените URL_API_DATA на адрес вашего API
+        .then(response => response.json())
+        .then(data => {
+            const tilesContainer = document.getElementById('tilesContainer');
+
+            // Очищаем контейнер с плитками, если есть предыдущий контент
+            tilesContainer.innerHTML = '';
+
+            // Создаем плитки для каждой записи данных
+            data.data.forEach(item => {
+                const col = document.createElement('div');
+                col.className = 'col-xs-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 mb-4';
+                col.innerHTML = `
+                    <div class="card" style="cursor: pointer;" onclick="location.href='http://localhost/location_detail/${item.id}';">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Shelving: ${item.shelving}</h5>
+                            <p class="card-text">Floor: ${item.floor}</p>
+                            <p class="card-text">Position: ${item.position}</p>
+                        </div>
+                    </div>
+                `;
+                tilesContainer.appendChild(col);
+            });
+        })
+        .catch(error => console.error('Error fetching data:', error));
+});
+</script>
+</body>
+</html>

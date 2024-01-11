@@ -1,21 +1,20 @@
 import uuid
-from typing import List
 
 from fastapi import APIRouter, HTTPException
 
 from app.services.storehouse_services import LocationService
-from app.storehouse_api.models import DetailLocationModel, CreateLocationModel, MultiResponseModel
+from app.storehouse_api.models import DetailLocationModel, CreateLocationModel, MultiResponseModel, LocationModel
 
 location_router = APIRouter()
 
 
 @location_router.post("/", response_model=DetailLocationModel)
-async def create_supplier(supplier: CreateLocationModel):
+async def create_location(supplier: CreateLocationModel):
     supplier_service = LocationService()
     return await supplier_service.create(supplier)
 
 
-@location_router.get("/{location_id}", response_model=DetailLocationModel)
+@location_router.get("/{location_id}", response_model=LocationModel)
 async def get_supplier(location_id: uuid.UUID):
     supplier_service = LocationService()
     supplier = await supplier_service.retrieve(location_id)
@@ -30,13 +29,13 @@ async def get_supplier(location_id: uuid.UUID):
 
 
 @location_router.get(
-    "/", response_model=MultiResponseModel[DetailLocationModel]
+    "/", response_model=MultiResponseModel[LocationModel]
 )
 async def get_all_suppliers(offset: int, limit: int):
     supplier_service = LocationService()
     suppliers, count = await supplier_service.get_all(offset=offset, limit=limit)
 
-    response = MultiResponseModel[DetailLocationModel](data=suppliers, count=count)
+    response = MultiResponseModel[LocationModel](data=suppliers, count=count)
 
     return response
 

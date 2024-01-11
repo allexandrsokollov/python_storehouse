@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<head>
+    <!-- ...другие теги в <head>... -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <!-- Проверьте версию Bootstrap и это официальная CDN ссылка -->
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" href="http://localhost/pages/">Pallets</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="http://localhost/pages/locations">Locations</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="http://localhost/pages/suppliers">Suppliers</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="http://localhost/pages/stats">Stats</a>
+            </li>
+            <li class="nav-item">
+                <a class="btn btn-secondary" href="http://localhost/pages/pallets/create/">Add Pallet</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="card w-100 mb-3 mt-2">
+        <div class="card-header text-center">
+            <h3 id="item-title"></h3>
+        </div>
+        <div class="card-body">
+            <h5 class="card-title">Описание</h5>
+            <p class="card-text" id="item-description"></p>
+            <h5 class="card-title">Информация о местоположении</h5>
+            <ul id="location-info" class="list-group list-group-flush"></ul>
+            <h5 class="card-title">Информация о поставщике</h5>
+            <ul id="supplier-info" class="list-group list-group-flush"></ul>
+        </div>
+        <div class="btn-group" role="group" aria-label="Button group">
+            <a class="btn btn-secondary me-2" href="http://localhost/pages">Назад</a>
+            <a class="btn btn-primary me-2" href="#" id="update_pallet">Обновить данные</a>
+            <a class="btn btn-primary me-2" href="#" id="delete_pallet" onclick="deleteResourceById()">Delete</a>
+        </div>
+
+    </div>
+</div>
+
+<!-- Подключение Bootstrap JS и зависимостей -->
+<script src="https://code.jquery.com/jquery-3.6.0.slim.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+<script>
+function fetchPalletDetails(palletId) {
+    fetch(`http://localhost/pallets/${palletId}`)
+    .then(response => response.json())
+    .then(item => {
+        document.getElementById('item-title').textContent = item.title || '';
+        document.getElementById('item-description').textContent = item.description || '';
+
+        // Заполняем информацию о местоположении, обрабатываем null значения
+        const locationInfo = document.getElementById('location-info');
+
+        if (item.location_id != null) {
+            fetchLocationDetails(item.location_id);
+        } else {
+            document.getElementById('location-info').textContent = "Информация о местоположении отсутствует";
+        }
+
+        // Заполняем информацию о поставщике, обрабатываем null значения
+        const supplierInfo = document.getElementById('supplier-info');
+        supplierInfo.innerHTML = `
+            <li class="list-group-item">Имя: ${item.supplier.name || ''}</li>
+        `;
+
+    })
+    .catch(error => console.error('Ошибка при получении данных:', error));
+}
+
+function fetchLocationDetails(locationId) {
+    fetch(`http://localhost/location/${locationId}`)
+        .then(response => response.json())
+        .then(location => {
+            const locationInfo = document.getElementById('location-info');
+            locationInfo.innerHTML = `
+                <li class="list-group-item">Shelving: ${location.shelving || 'Не указано'}</li>
+                <li class="list-group-item">Floor: ${location.floor || 'Не указано'}</li>
+                <li class="list-group-item">Position: ${location.position || 'Не указано'}</li>
+            `;
+        })
+        .catch(error => {
+            console.error('Ошибка при получении информации о местоположении:', error);
+            document.getElementById('location-info').textContent = "Ошибка при получении информации о местоположении";
+        });
+}
+
+function deleteResourceById() {
+    // Получение строки запроса из URL
+    const currentUrl = new URL(window.location.href);
+    const palletId = currentUrl.pathname.split('/').pop();
+    // Получение идентификатора из параметров запроса (предположим, что параметр называется 'id')
+
+    if (palletId) {
+        // Составление полного URL для DELETE запроса
+        const fullUrl = `http://localhost/pallets/${palletId}`;
+
+        // Отправка DELETE запроса к API
+        fetch(fullUrl, {
+            method: 'DELETE'
+        })
+        .then(response => {
+            if (!response.ok) {
+                // Если сервер вернул HTTP ошибку, отображаем её статус
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Здесь обработка ответа от сервера после удаления ресурса
+            console.log('Resource deleted successfully:', data);
+                       window.location.href = 'http://localhost/pages/';
+        })
+        .catch(error => {
+            // В случае ошибки запроса, логируем её в консоль
+            console.error('Error during the delete operation:', error);
+        });
+    } else {
+        console.error('ID not found in URL');
+    }
+}
+
+window.onload = function() {
+    const currentUrl = new URL(window.location.href);
+    const palletId = currentUrl.pathname.split('/').pop();
+    fetchPalletDetails(palletId);
+
+    var backButton = document.querySelector("#update_pallet");
+
+    if (backButton) {
+        // Обновляем href для кнопки "Назад"
+        backButton.href = "http://localhost/pages/pallets/update/" + palletId;
+        // Пример: backButton.href = "http://localhost/pages/" + encodeURIComponent(itemId);
+    }
+}
+
+
+</script>
+</body>
+</html>

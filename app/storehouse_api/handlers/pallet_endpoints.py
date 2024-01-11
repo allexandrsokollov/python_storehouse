@@ -1,5 +1,4 @@
 import uuid
-from typing import List
 
 from fastapi import APIRouter, HTTPException
 
@@ -16,9 +15,9 @@ async def create_pallet(pallet: CreatePalletModel):
 
 
 @pallet_router.get("/", response_model=MultiResponseModel[PalletModel])
-async def get_pallets(offset: int, limit: int):
+async def get_pallets(offset: int, limit: int, search: str = None, supplier_id: str = None):
     pallet_service = PalletService()
-    pallets, count = await pallet_service.get_all(offset=offset, limit=limit)
+    pallets, count = await pallet_service.get_all(offset=offset, limit=limit, search=search, supplier_search=supplier_id)
 
     response = MultiResponseModel[PalletModel](data=pallets, count=count)
     return response
@@ -52,8 +51,10 @@ async def update_pallet(pallet_id: uuid.UUID, pallet_data: UpdatePalletModel):
 
 @pallet_router.delete("/{pallet_id}")
 async def delete_pallet(pallet_id: uuid.UUID):
+    print('at deleting')
     pallet_service = PalletService()
     res = await pallet_service.delete(pallet_id)
+    print('deleting res', res)
 
     if not res:
         raise HTTPException(

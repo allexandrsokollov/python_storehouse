@@ -15,7 +15,7 @@ from app.storehouse_api.models import (
     UpdatePalletModel,
     UpdateSupplierModel,
     CreateLocationModel,
-    DetailLocationModel,
+    DetailLocationModel, LocationModel,
 )
 
 engine = create_async_engine(
@@ -149,8 +149,25 @@ class LocationService:
                 data = []
                 for row in locations:
                     data.append(
-                        DetailLocationModel.model_validate(row, from_attributes=True)
+                        LocationModel.model_validate(row, from_attributes=True)
                     )
+
+                return data, count
+
+    async def get_all_empty(self, offset: int, limit: int):
+        async with async_session() as session:
+            async with session.begin():
+                location_repo = LocationRepo(session)
+                locations, count = await location_repo.get_all(
+                    offset=offset, limit=limit
+                )
+
+                data = []
+                for row in locations:
+                    if row.pallet is None:
+                        data.append(
+                            LocationModel.model_validate(row, from_attributes=True)
+                        )
 
                 return data, count
 
@@ -163,7 +180,7 @@ class LocationService:
                 if not location_data:
                     return None
 
-                return DetailLocationModel.model_validate(
+                return LocationModel.model_validate(
                     location_data, from_attributes=True
                 )
 
@@ -205,7 +222,7 @@ class PalletService:
                 new_pallet = await pallet_repo.create(
                     title=pallet.title,
                     description=pallet.description,
-                    location_id=None,
+                    location_id=pallet.location_id,
                     supplier_id=pallet.supplier_id,
                 )
                 return PalletModel(
@@ -220,11 +237,12 @@ class PalletService:
                     user=None,
                 )
 
-    async def get_all(self, offset: int, limit: int):
+    async def get_all(self, offset: int, limit: int, search: str = None, supplier_search: str = None):
         async with async_session() as session:
             async with session.begin():
                 pallet_repo = PalletRepo(session)
-                pallets, count = await pallet_repo.get_all(offset=offset, limit=limit)
+                pallets, count = await pallet_repo.get_all(offset=offset, limit=limit,
+                                                           name_search=search, supplier_search=supplier_search)
 
                 palett_models = [
                     PalletModel.model_validate(row, from_attributes=True)
@@ -260,6 +278,6 @@ class PalletService:
             async with session.begin():
                 pallet_repo = PalletRepo(session)
 
-                result = pallet_repo.delete(pallet_id)
+                result = await pallet_repo.delete(pallet_id)
 
                 return result

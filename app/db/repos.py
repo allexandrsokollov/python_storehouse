@@ -1,6 +1,6 @@
 import uuid
 from abc import ABC, abstractmethod
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 
 from sqlalchemy import select
 from sqlalchemy import func
@@ -131,15 +131,30 @@ class PalletRepo(AbstractAsyncRepo):
         await self.db_session.flush()
         return new_pallet
 
-    async def get_all(self, offset: int, limit: int) -> Tuple[List[Pallet], int]:
+    async def get_all(self, offset: int, limit: int, name_search: Optional[str] = None,
+                      supplier_search: Optional[str] = None) -> Tuple[List[Pallet], int]:
         query = select(Pallet).options(
             selectinload(Pallet.supplier),
             selectinload(Pallet.user),
             selectinload(Pallet.location),
         )
 
-        # Получаем общее количество элементов
+        # Добавляем условие фильтрации по имени, если параметр name_search задан
+        if name_search:
+            query = query.filter(Pallet.title.ilike(f"%{name_search}%"))
+
+        # Добавляем условие фильтрации по поставщику, если параметр supplier_search задан
+        if supplier_search:
+            query = query.filter(Pallet.supplier_id == supplier_search)  # Использование '==' вместо 'is_'
+
         count_query = select(func.count()).select_from(Pallet)
+
+        # Фильтруем запрос count, если применяются фильтры по name и/или supplier
+        if name_search:
+            count_query = count_query.filter(Pallet.title.ilike(f"%{name_search}%"))
+        if supplier_search:
+            count_query = count_query.filter(Pallet.supplier_id == supplier_search)
+
         count = await self.db_session.scalar(count_query)
 
         # Получаем данные с учетом ограничений по offset и limit

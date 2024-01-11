@@ -8,3 +8,4 @@ asyncpg
 uvicorn
 python-dotenv
 starlette-exporter
+jinja2
